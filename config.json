@@ -1,0 +1,49 @@
+{
+"sites":
+    {
+    "lgU1":     "https://10.167.8.9/rest/login",
+    "soGt1":     "https://10.167.8.9/rest/",
+    "lgU2":     "https://10.167.0.11/rest/login",
+    "soGt2":     "https://10.167.0.11/rest/",
+    "lgU3":     "https://qa-cl1gw1.voiceforteams.com/rest/login",
+    "soGt3":     "https://qa-cl1gw1.voiceforteams.com/rest/",
+    "lgU4":     "https://qa-cl1gw2.voiceforteams.com/rest/login",
+    "soGt4":     "https://qa-cl1gw2.voiceforteams.com/rest/",
+    "lgU5":     "https://13.68.182.61/rest/login",
+    "soGt5":     "https://13.68.182.61/rest/",
+    "lgU6":     "https://13.92.153.250/rest/login",
+    "soGt6":     "https://13.92.153.250/rest/",
+    "lgU7":     "https://138.91.196.224/rest/login",
+    "soGt7":     "https://138.91.196.224/rest/"
+    },
+"stename":
+    {
+    "1":        "ops-cl1gw1",
+    "2":        "ops-cl1gw2",
+    "3":        "qa-cl1gw1",
+    "4":        "qa-cl1gw2",
+    "5":        "dops-cl1gw1",
+    "6":        "Prod1",
+    "7":        "Prod2"
+    },
+"ntwk":
+    {
+    "sip1":     "atgn1.siptrunk.com",
+    "sip2":     "atgn2.siptrunk.com",
+    "ms":
+        {
+            "1":      "sip.pstnhub.microsoft.com",
+            "2":      "sip2.pstnhub.microsoft.com",
+            "3":      "sip3.pstnhub.microsoft.com",
+            "4":      "sip-all.pstnhub.microsoft.com"
+        },
+    "gtwy":     "255.255.255.0",
+    "gtwy2":    "255.255.255.255",
+    "dir1":     "104.42.217.197",
+    "dir2":     "qa-sipdr.voiceforteams.com"
+    },
+"UserInfo":
+    {
+    "uName":    "sterlingapi"
+    }
+}
