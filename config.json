@@ -11,10 +11,12 @@
     "soGt4":     "https://qa-cl1gw2.voiceforteams.com/rest/",
     "lgU5":     "https://13.68.182.61/rest/login",
     "soGt5":     "https://13.68.182.61/rest/",
-    "lgU6":     "https://13.92.153.250/rest/login",
-    "soGt6":     "https://13.92.153.250/rest/",
-    "lgU7":     "https://138.91.196.224/rest/login",
-    "soGt7":     "https://138.91.196.224/rest/"
+    "lgU6":     "https://tqa-cl1gw1.voiceforteams.com/rest/login",
+    "soGt6":     "https://tqa-cl1gw1.voiceforteams.com/rest/",
+    "lgU7":     "https://13.92.153.250/rest/login",
+    "soGt7":     "https://13.92.153.250/rest/",
+    "lgU8":     "https://138.91.196.224/rest/login",
+    "soGt8":     "https://138.91.196.224/rest/"
     },
 "stename":
     {
@@ -23,8 +25,15 @@
     "3":        "qa-cl1gw1",
     "4":        "qa-cl1gw2",
     "5":        "dops-cl1gw1",
-    "6":        "Prod1",
-    "7":        "Prod2"
+    "6":        "tqa-cl1gw1",
+    "7":        "Prod1",
+    "8":        "Prod2"
+    },
+"logging":
+    {
+    "File"          : "c:\\Users\\struex\\Desktop\\CloudRepository\\Sonus\\sonusapi\\Sonusactions.log",
+    "Level"         : "4",
+    "logOrScreen"   : "1"
     },
 "ntwk":
     {

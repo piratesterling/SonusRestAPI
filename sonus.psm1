@@ -17,7 +17,7 @@
 ##  6. Get-MyAvailLic --- Checks specified Gateway for total Sip Licenses.   
 ##  7. Get-SgCounts   --- Counts total configured channels per SG than adds
 ##                        them to give a total configured on the Gateway.
-##  8. Get-AllConfig  --- **** Option 2 must be run against both the PSTN &
+##  8. Get-CompareConfig--Option 2 or 10 must be run against both the PSTN &
 ##                        Teams customer groups prior to running.***
 ##                        This process checks settings against "correct" 
 ##                        settings within each function. It compares those
@@ -27,22 +27,28 @@
 ##                        setting."  Customer should be adjusted.
 ##  9. Remove-Customer--- This function calls up, first 'Get-ChecksForRemoval'
 ##                        which checks each element in the customer build for 
-##  Backup SYSTEM         the PSTN group, ensuring "Description" field names
-##     PRIOIR             the <customer>_pstn against the SG for the Number that
-##  to running 9.         was entered.  It than does the same for each element
+##      Backup SYSTEM     the PSTN group, ensuring "Description" field names
+##          PRIOR         the <customer>_pstn against the SG for the Number that
+##      to running 9.     was entered.  It than does the same for each element
 ##                        in the <customer>_teams.  
-##  Recovery is much      Based on the score, if all 11 elements match, it will
-##  quicker this way.     call up Remove-Customer, give a summary of what is 
+##    Recovery is much    Based on the score, if all 11 elements match, it will
+##    quicker this way.   call up Remove-Customer, give a summary of what is 
 ##                        is about to occur.  If acknowledged removal occurs.
 ##                        IF, however, either the score does not match, each 
 ##                        incorrect entry is flagged, and must be corrected 
 ##                        prior to Remove-Customer occurring.  As well, if any
 ##                        key other than 'y' pressed at last out, no removal
-##                        will occur.  
+##                        will occur. 
+##  10. Get-AllCustomer---This function requires that you have a count of all
+##                        Customer Configured SGs on system.  Once you run 
+##                        this option, the first thing it does is delete any
+##                        existing Gateway Folder in the running directory.
+##                        If you want to save what you have, do so manually
+##                        prior to running.
 ###############################################################################
 function Get-RibbonInfo{
 	param ($msa2,$conf, $log, $codes, $myste)
-    
+    $log.info("***** Beginning specific element search on $msa2");
    	clear-host;
    	write-host "`n`n`n`n`n`n";
    	write-host "`t`t1. Sip RemoteAuth Table";
@@ -60,23 +66,6 @@ function Get-RibbonInfo{
     	
 	$uI2 = read-host "Which table are you trying to get info for (number)?"
        	if ($mS1 -eq 1){
-        	$eC1  = "{0}sipremoteauthtable/{1}/sipremoteauthentry" `
-                                                    -f $mSa2,$uI2;
-        	$pE1= Invoke-WebRequest @props `
-		                	-Uri $eC1 `
-						    -Method Get;
-	        $pE1_xml =  [xml]$pE1.Content.trim();
-            if(!($pe1_xml.root.status.http_code -match 200)){
-                $retcode = $pe1_xml.root.status.app_status.app_status_entry.code;
-                $myFailure= $codes.$retcode;
-                Write-Host "`n`n`n`t`t$($pe1_xml.root.status.http_code) - $myFailure" `
-                -ForegroundColor Red;
-                $tstamp = Get-Date -format "dd-MMM-yyyy HH:mm";
-                Write-Output "$tstamp -- $eC1 may not exist: $($pe1_xml.root.status.http_code) - $myFailure" | out-file $log -Append;
-            }
-            
-        
-        	$pE1_xml.root.sipremoteauthentry_list.sipremoteauthentry_pk.id;
             $uI1    =   Read-Host "which table entry would you like information on?"
         	$site1  =   "sipremoteauthtable/$uI2/sipremoteauthentry/$uI1";
         	$fI1    =   "sipremoteauthentry"
@@ -84,26 +73,6 @@ function Get-RibbonInfo{
         }
 
         elseif ($mS1 -eq 2){
-            $eC1    =   "{0}sipcontactregistrant/{1}/sipregistrantentry" `
-                                                        -f $mSa2,$uI2;
-            $pE1= Invoke-WebRequest @props `
-                            -Uri $eC1 `
-                            -Method Get;
-            $pE1_xml =  [xml]$pE1.Content.trim();
-            if(!($pe1_xml.root.status.http_code -match 200)){
-                $retcode = $pe1_xml.root.status.app_status.app_status_entry.code;
-                $myFailure= $codes.$retcode;
-
-                $tstamp = Get-Date -format "dd-MMM-yyyy HH:mm";
-                Write-Output "$tstamp -- $eC1 may not exist: `
-                    $($pE1_xml.root.status.http_code) - $myFailure" `
-                    | out-file $localLog -Append;
-                Write-Host "`n`n`n`t`t$($pe1_xml.root.status.http_code) - $myFailure" `
-                                                    -ForegroundColor Red;
-                }
-            
-
-            $pE1_xml.root.sipremoteauthentry_list.sipremoteauthentry_pk.id;
             $uI1     =  Read-Host "which table entry would you like information on?"
             $site1   =  "sipcontactregistrant/$uI2/sipregistrantentry/$uI1";
             $fI1     =  "sipregistrantentry"
@@ -116,43 +85,13 @@ function Get-RibbonInfo{
         }
 
         elseif ($mS1 -eq 4){
-            $eC1    =   "{0}sipservertable/{1}/sipserver"-f $mSa2,$uI2;
-            $pE1    =   Invoke-WebRequest @props `
-                                -Uri $eC1 `
-					            -Method Get;
-           	$pE1_xml=[xml]$pE1.Content.trim();
-            if(!($pe1_xml.root.status.http_code -match 200)){
-                $retcode = $pe1_xml.root.status.app_status.app_status_entry.code;
-                $myFailure= $codes.$retcode;
-                }
-            
-        Write-Host "`n`n`n`t`t$($pe1_xml.root.status.http_code) - $myFailure" `
-                -ForegroundColor Red;
-            $pE1_xml.root.sipserver_list.sipserver_pk.id
-            	
-		    $uI1    =   Read-Host "which table entry would you like information on?"
+            $uI1    =   Read-Host "which table entry would you like information on?"
             $site1  =   "sipservertable/$uI2/sipserver/$uI1";
             $fI1    =   "sipserver"
         	$soUri  =   '{0}{1}' -f $mSa2,$site1;
         }
 
         elseif ($mS1 -eq 5){
-            $eC1    =   "{0}transformationtable/{1}/transformationentry" `
-                                                        -f $mSa2,$uI2;
-            $pE1    =   Invoke-WebRequest @props `
-                                -Uri $eC1 `
-					            -Method Get;
-            	
-		    $pE1_xml=[xml]$pE1.Content.trim();
-            if(!($pe1_xml.root.status.http_code -match 200)){
-                $retcode = $pe1_xml.root.status.app_status.app_status_entry.code;
-                $myFailure= $codes.$retcode;
-                }
-            
-        Write-Host "`n`n`n`t`t$($pe1_xml.root.status.http_code) - $myFailure" `
-                -ForegroundColor Red;
-            $pE1_xml.root.transformationentry_list.transformationentry_pk.id
-            	
 		    $uI1    =   Read-Host "which table entry would you like information on?"
             $site1  =   "transformationtable/$uI2/transformationentry/$uI1";
             $fI1    =	"transformationentry"
@@ -160,21 +99,6 @@ function Get-RibbonInfo{
         }
     
         elseif ($mS1 -eq 6){
-            $eC1    =   "{0}routingtable/{1}/routingentry" `
-                                            -f $mSa2,$uI2;
-            $pE1    =   Invoke-WebRequest @props `
-                                -Uri $eC1 `
-					            -Method Get;
-            $pE1_xml=[xml]$pE1.Content.trim();
-            if(!($pe1_xml.root.status.http_code -match 200)){
-                $retcode = $pe1_xml.root.status.app_status.app_status_entry.code;
-                $myFailure= $codes.$retcode;
-                }
-            
-        Write-Host "`n`n`n`t`t$($pe1_xml.root.status.http_code) - $myFailure" `
-                -ForegroundColor Red;
-            $pE1_xml.root.routingentry_list.routingentry_pk.id;
-            
 		    $uI1    =   Read-Host "which table entry would you like information on?"
             $site1  =	"routingtable/$uI2/routingentry/$uI1";
             $fI1    =	"routingentry"
@@ -191,45 +115,51 @@ function Get-RibbonInfo{
     	$mLs1 = Invoke-WebRequest @props `
                         -Uri $soUri `
 					    -Method GET;
-    	#$mLs1.Content ;
+    	
     	$mLs1_xml = [xml]$mLs1.Content.Trim();
         if($mLs1_xml.root.status.http_code -match '200'){
             Write-Host "$fI1 successfully found";
+            $mLs1_xml.root.$fI1 |out-file $fileName;
+    	                    (Get-Content $fileName) |`
+    		                Select-String -Pattern "rt_[a-z]" `
+                            -NotMatch |`	
+			                Out-File $fileName;
         }else{
             $retcode = $mLs1_xml.root.status.app_status.app_status_entry.code;
             $myFailure= $codes.$retcode;
+            $log.error("$SoUri may not exist: $($mLs1_xml.root.status.http_code) - $myFailure");
             Write-Host "`n`n`n`t`t$($mLs1_xml.root.status.http_code) - $myFailure" `
             -ForegroundColor Red;
         };
-        $mLs1_xml.root.$fI1 |out-file $fileName;
-    	    (Get-Content $fileName) |`
-    		Select-String -Pattern "rt_[a-z]" `
-            -NotMatch |`	
-			Out-File $fileName;
+        $log.info("***** Completed specified element search on $msa2");
 };
 
 function Get-MyCustomer{
-	param ($msa2,$conf, $myste)
+	param ($msa2,$conf, $log, $myste)
     
 	$mloc   =   get-location;
+    $gwstorage = "{0}\{1}" -f $mloc,$myste;
 	Clear-Host;
 	$cstsl  =   Read-Host "`n`n`n`tWhat is the SG number of the customer?";
 	$cstnme =   Read-Host "`tWhat is the customer name?";
-	$nwdrp  =   "{0}\{1}\{2}_pstn" -f $mloc,$myste,$cstnme;
-    $nwdrt  =   "{0}\{1}\{2}_teams" -f $mloc,$myste,$cstnme;
+	$nwdrp  =   "{0}\{1}_pstn" -f $gwstorage,$cstnme;
+    $nwdrt  =   "{0}\{1}_teams" -f $gwstorage,$cstnme;
     
-	if (!(Test-Path -Path ($nwdrp -or $nwdrt))){
+    
+     
+	if (!(Test-Path -Path $nwdrp)){
        	if($cstsl % 2 -ne 0){
        		New-Item -ItemType Directory -Path $nwdrp;
        		$oudir=$nwdrp;
         }
-        
-	    elseif($cstsl % 2 -eq 0){
+    }
+    if (!(Test-Path -Path $nwdrt)){    
+	    if($cstsl % 2 -eq 0){
             New-Item -ItemType Directory -Path $nwdrt;
             $oudir=$nwdrt;
 	    }      
     }
-
+    $log.info("****** Gathering all elements for Customer $cstsl.");
     ##  Only Grabbing Registratin tables from even numbered,
     ##  Pstn Groups.	
     if($cstsl % 2 -ne 0){
@@ -244,9 +174,11 @@ function Get-MyCustomer{
         if(!($mLs1_xml.root.status.http_code -match 200)){
             $retcode = $mLs1_xml.root.status.app_status.app_status_entry.code;
             $myFailure= $codes.$retcode;
+            $log.error("$site1 not found.--$($mLs1_xml.root.status.http_code) - $myFailure");
             Write-Host "`n`t`tProblem getting $site1";
             Write-Host "`t`t$($mLs1_xml.root.status.http_code) - $myFailure" `
                                                              -ForegroundColor Red;
+            
         }
         else{
             $mLs1_xml.root.$fi1 |Out-File $oudir\$fn1;
@@ -261,11 +193,12 @@ function Get-MyCustomer{
     	$site2  =   "sipcontactregistrant/$cstsl/sipregistrantentry/1";
     	$soUri2 =   '{0}{1}' -f $mSa2,$site2; 
     	$mLs2   =   Invoke-WebRequest @props -Uri $soUri2 -Method GET;
-    	#$mLs2.Content ;
+    	
     	$mLs2_xml = [xml]$mLs2.Content.Trim();
             if(!($mLs2_xml.root.status.http_code -match 200)){
                 $retcode = $mLs2_xml.root.status.app_status.app_status_entry.code;
                 $myFailure= $codes.$retcode;
+                $log.error("$site2 not found.--$($mLs2_xml.root.status.http_code) - $myFailure");
                 Write-Host "`n`t`t Problem checking $site2";
                 Write-Host "`t`t $($mLs2_xml.root.status.http_code) - $myFailure" `
                                                                  -ForegroundColor Red;
@@ -289,6 +222,7 @@ function Get-MyCustomer{
             if(!($mLs3_xml.root.status.http_code -match 200)){
                 $retcode = $mLs3_xml.root.status.app_status.app_status_entry.code;
                 $myFailure= $codes.$retcode;
+                $log.error("$site3 not found.--$($mLs3_xml.root.status.http_code) - $myFailure");
                 Write-Host "`n`t`t Problem checking $site3";
                 Write-Host "`t`t $($mLs3_xml.root.status.http_code) - $myFailure" `
                                                                  -ForegroundColor Red;
@@ -317,6 +251,7 @@ function Get-MyCustomer{
             if(!($mLs4_xml.root.status.http_code -match 200)){
                 $retcode = $mLs4_xml.root.status.app_status.app_status_entry.code;
                 $myFailure= $codes.$retcode;
+                $log.error("$site4 not found.--$($mLs4_xml.root.status.http_code) - $myFailure");
                 Write-Host "`n`t`t Problem checking $site4";
                 Write-Host "`t`t $($mLs4_xml.root.status.http_code) - $myFailure" `
                                                                  -ForegroundColor Red;
@@ -344,6 +279,7 @@ function Get-MyCustomer{
             if(!($mLs4a_xml.root.status.http_code -match 200)){
                 $retcode = $mLs4a_xml.root.status.app_status.app_status_entry.code;
                 $myFailure= $codes.$retcode;
+                $log.error("$site4a not found.--$($mLs4a_xml.root.status.http_code) - $myFailure");
                 Write-Host "`n`t`t Problem checking $site4a";
                 Write-Host "`t`t $($mLs4a_xml.root.status.http_code) - $myFailure" `
                                                                  -ForegroundColor Red;
@@ -364,6 +300,7 @@ function Get-MyCustomer{
             if(!($mLs4b_xml.root.status.http_code -match 200)){
                 $retcode = $mLs4b_xml.root.status.app_status.app_status_entry.code;
                 $myFailure= $codes.$retcode;
+                $log.error("$site4b not found.--$($mLs4b_xml.root.status.http_code) - $myFailure");
                 Write-Host "`n`t`t Problem checking $site4b";
                 Write-Host "`t`t $($mLs4b_xml.root.status.http_code) - $myFailure" `
                                                                  -ForegroundColor Red;
@@ -389,6 +326,7 @@ function Get-MyCustomer{
             if(!($mLs5_xml.root.status.http_code -match 200)){
                 $retcode = $mLs5_xml.root.status.app_status.app_status_entry.code;
                 $myFailure= $codes.$retcode;
+                $log.error("$site5 not found.--$($mLs5_xml.root.status.http_code) - $myFailure");
                 Write-Host "`n`t`t Problem checking $site5";
                 Write-Host "`t`t $($mLs5_xml.root.status.http_code) - $myFailure" `
                                                                  -ForegroundColor Red;
@@ -412,6 +350,7 @@ function Get-MyCustomer{
             if(!($mLs6_xml.root.status.http_code -match 200)){
                 $retcode = $mLs6_xml.root.status.app_status.app_status_entry.code;
                 $myFailure= $codes.$retcode;
+                $log.error("$site6 not found.--$($mLs6_xml.root.status.http_code) - $myFailure");
                 Write-Host "`n`t`t Problem checking $site6";
                 Write-Host "`t`t $($mLs6_xml.root.status.http_code) - $myFailure" `
                                                                  -ForegroundColor Red;            
@@ -434,6 +373,7 @@ function Get-MyCustomer{
             if(!($mLs7_xml.root.status.http_code -match 200)){
                 $retcode = $mLs7_xml.root.status.app_status.app_status_entry.code;
                 $myFailure= $codes.$retcode;
+                $log.error("$site7 not found.--$($mLs7_xml.root.status.http_code) - $myFailure");
                 Write-Host "`n`t`t Problem checking $site7";
                 Write-Host "`t`t $($mLs7_xml.root.status.http_code) - $myFailure" `
                                                                  -ForegroundColor Red;
@@ -445,6 +385,19 @@ function Get-MyCustomer{
 	                          -NotMatch |`
     	                      Out-File $oudir\$fn7;
             }
+        if($cstsl % 2 -ne 0){
+            if(((Get-ChildItem $nwdrp ).Length) -eq '0'){
+                Remove-Item $nwdrp -Force;
+                $log.error("Removed supurfluous directory $nwdrt.");
+            }
+        }
+        else{     
+        if(((Get-ChildItem $nwdrt ).Length) -eq '0'){
+            Remove-Item $nwdrt -Force;
+            $log.error("Removed supurfluous directory $nwdrt.");
+            }
+        }
+        $log.info("****** Completed gathering elements for Customer $cstsl.");
 };
 
 function New-MyServer{
@@ -464,7 +417,7 @@ function New-MyServer{
 };
 ##  Next 11 Functions called by New-MyServer
 function New-SrvTlsProf{
-    param ($msa2,$conf, $myste)
+    param ($msa2,$conf, $log, $myste)
 	$mtlsp1 = @{
     	"Description"		    ="tls_pstn"
     	"TLSVersion"	    	="0"
@@ -980,7 +933,7 @@ function New-SrvRoTblEntry{
 };
 
 function Set-MyRegAuth{
-    param ($msa2,$conf, $myste)
+    param ($msa2,$conf, $log, $myste)
    	$myCust=Read-Host "What are we naming it?";
     $myCstNum = read-host "What are we Numbering it?";
    	$mycra1 = @{
@@ -1060,6 +1013,7 @@ function Set-AddSipServer{
     $srvtbl1_xml = [xml]$srvtbl1.Content.Trim();
     
     if(!($srvtbl1_xml.root.status.http_code -match '200')){
+        $srvtbl1_xml.root.status;
         $retcode = $srvtbl1_xml.root.status.app_status.app_status_entry.code;
         $myFailure= $codes.$retcode;
         Write-Host "`n`t`t Couldnt add $uri1 .See below error.";
@@ -1076,6 +1030,7 @@ function Set-AddSipServer{
 				            -Body $spserv3;
     $srvtbl2_xml = [xml]$srvtbl2.Content.Trim();
     if(!($srvtbl2_xml.root.status.http_code -match '200')){
+        $srvtbl2_xml.root.status;
         $retcode = $srvtbl2_xml.root.status.app_status.app_status_entry.code;
         $myFailure= $codes.$retcode;
         Write-Host "`n`t`t Couldnt add $uri2 .See below error.";
@@ -1164,23 +1119,25 @@ function Get-SgCounts{
 
 };
 
-function Get-AllConfig{
-    Param( $mycust, $pltfrm )
-    Get-RouteTblPSTN    $mycust;
-    Get-SgPSTN          $mycust;
-    Get-TxfrmPSTN       $mycust;
-    Get-SipServerPSTN   $mycust;
-    Get-SipProfilePSTN  $mycust;
-    Get-RouteTblTeams   $mycust;
-    Get-SgTeams         $mycust;
-    Get-TxfrmTeams      $mycust;
-    Get-SipServerTeams  $mycust;
-    Get-SipProfileTeams $mycust `
+function Get-CompareConfig{
+    Param( $mycust, $log, $pltfrm )
+    $log.info("Running Get-CompareConfig on $mycust");
+    Get-RouteTblPSTN    -mycust $mycust -log $log;
+    Get-SgPSTN          -mycust $mycust -log $log;
+    Get-TxfrmPSTN       -mycust $mycust -log $log;
+    Get-SipServerPSTN   -mycust $mycust -log $log;
+    Get-SipProfilePSTN  -mycust $mycust -log $log;
+    Get-RouteTblTeams   -mycust $mycust -log $log;
+    Get-SgTeams         -mycust $mycust -log $log;
+    Get-TxfrmTeams      -mycust $mycust -log $log;
+    Get-SipServerTeams  -mycust $mycust -log $log;
+    Get-SipProfileTeams -mycust $mycust -log $log `
                         -pltfrm $pltform;
+    $log.info("Completed Get-CompareConfig on $mycust");
 };
 ##  Next 10 functions called by  Get-AllConfig
 function Get-RouteTblPSTN{
-    Param( $mycust )
+    Param( $mycust, $log )
     $file   = "routingentry.txt"
     $type   = "pstn";
     $myDir  = Get-Location;
@@ -1200,13 +1157,14 @@ function Get-RouteTblPSTN{
                             -literalpath $routfile `
                             -AllMatches;
         if(!($name = $a)){
-            Write-Host "`n$mycust PSTN-- routingentry --$field does not match!  "
+            Write-Host "`n$mycust PSTN-- routingentry --$field does not match!  ";
+            $log.info("$mycust PSTN-- routingentry --$field does not match!");
         }
     };
     Write-Host "`n Completed checking $mycust PSTN Routing" -ForegroundColor Yellow;
 };
 function Get-SgPSTN{
-    Param( $mycust )
+    Param( $mycust, $log )
     
     $file   = "sipsg.txt";
     $type   = "pstn";
@@ -1239,13 +1197,14 @@ function Get-SgPSTN{
                 -AllMatches;
         if(!($name = $b)){
             Write-Host "`n$mycust PSTN-- sipsg --$field does not match! ";
+            $log.info(" $mycust PSTN-- sipsg --$field does not match! ");
         }
     };
     Write-Host "`n Completed checking $mycust PSTN SGs" `
                 -ForegroundColor Yellow;
 };
 function Get-TxfrmPSTN{
-    Param( $mycust )
+    Param( $mycust, $log )
     $type           = "pstn";
     $myDir          = Get-Location;
     $cust           = "{0}\{1}_{2}" `
@@ -1267,15 +1226,15 @@ function Get-TxfrmPSTN{
                             -literalpath $txfentryfile `
                             -AllMatches;
         if(!($name = $c)){
-            Write-Host "`n$mycust PSTN-- transformationentry `
-                        --$field does not match! ";
+            Write-Host "`n$mycust PSTN-- transformationentry--$field does not match! ";
+            $log.info(" $mycust PSTN-- transformationentry--$field does not match! ");
         }
     }
     Write-Host "`n Completed checking $mycust PSTN Transformations " `
                     -ForegroundColor Yellow;
 };
 function Get-SipServerPSTN{
-    Param( $mycust )
+    Param( $mycust, $log )
     $type           = "pstn";
     $myDir          = Get-Location;
     $cust           = "{0}\{1}_{2}" `
@@ -1298,15 +1257,15 @@ function Get-SipServerPSTN{
                             -literalpath $sipserverfile `
                             -AllMatches;
         if(!($name = $c)){
-            Write-Host "`n$mycust PSTN-- sipserver `
-                        --$field does not match! ";
+            Write-Host "`n$mycust PSTN-- sipserver --$field does not match! ";
+            $log.info(" $mycust PSTN-- sipserver --$field does not match! ");
         }
     }
     Write-Host "`n Completed checking $mycust PSTN SipServer " `
                     -ForegroundColor Yellow;
 };
 function Get-SipProfilePSTN{
-    Param( $mycust )
+    Param( $mycust, $log )
     $type           = "pstn";
     $myDir          = Get-Location;
     $cust           = "{0}\{1}_{2}" `
@@ -1326,15 +1285,15 @@ function Get-SipProfilePSTN{
                                     -literalpath $sipprofile `
                                     -AllMatches;
         if(!($name = $c)){
-            Write-Host "`n$mycust PSTN-- sipProfile `
-                    --$field does not match! ";
+            Write-Host "`n$mycust PSTN-- sipProfile --$field does not match! ";
+            $log.info(" $mycust PSTN-- sipProfile --$field does not match! ");
         }
     }
     Write-Host "`n Completed checking $mycust PSTN SipProfile " `
                     -ForegroundColor Yellow;
 };
 function Get-RouteTblTeams{
-    Param( $mycust )
+    Param( $mycust, $log)
     $file           = "routingentry.txt"
     $type           = "teams";
     $myDir          = Get-Location;
@@ -1354,15 +1313,15 @@ function Get-RouteTblTeams{
                             -literalpath $routfile `
                             -AllMatches;
         if(!($name = $a)){
-            Write-Host "`n$mycust Teams-- routingentry `
-                    --$field does not match!  "
+            Write-Host "`n$mycust Teams-- routingentry --$field does not match! ";
+            $log.info(" $mycust Teams-- routingentry --$field does not match! ");
         }
     };
     Write-Host "`n Completed checking $mycust Teams Routing" `
                     -ForegroundColor Yellow;
 };
 function Get-SgTeams{
-    Param( $mycust )
+    Param( $mycust, $log )
     $file       = "sipsg.txt";
     $type       = "teams";
     $myDir      = Get-Location;
@@ -1396,15 +1355,15 @@ function Get-SgTeams{
                             -literalpath $sgfile `
                             -AllMatches;
         if(!($name = $b)){
-            Write-Host "`n$mycust Teams-- sipsg `
-                    --$field does not match! ";
+            Write-Host "`n$mycust Teams-- sipsg --$field does not match! ";
+            $log.info(" $mycust Teams-- sipsg --$field does not match! ");
         }
     };
     Write-Host "`n Completed checking $mycust Teams SGs" `
                     -ForegroundColor Yellow;
 };
 function Get-TxfrmTeams{
-    Param( $mycust )
+    Param( $mycust, $log )
     $type           = "teams";
     $myDir          = Get-Location;
     $cust           = "{0}\{1}_{2}" `
@@ -1426,15 +1385,15 @@ function Get-TxfrmTeams{
                             -literalpath $txfentryfile `
                             -AllMatches;
         if(!($name = $c)){
-            Write-Host "`n$mycust Teams-- transformationentry `
-                    --$field does not match! ";
+            Write-Host "`n$mycust Teams-- transformationentry --$field does not match! ";
+            $log.info(" $mycust Teams-- transformationentry --$field does not match! ");
         }
     }
     Write-Host "`n Completed checking $mycust Teams Transformations " `
                     -ForegroundColor Yellow;
 };
 function Get-SipServerTeams{
-    Param( $mycust )
+    Param( $mycust, $log )
     $type           = "teams";
     $myDir          = Get-Location;
     $cust           = "{0}\{1}_{2}" `
@@ -1475,8 +1434,8 @@ function Get-SipServerTeams{
                             -literalpath $sipserverfile `
                             -AllMatches;
         if(!($name  = $c)){
-            Write-Host "`n$mycust Teams-- sipserver `
-                    --$field does not match! ";
+            Write-Host "`n$mycust Teams-- sipserver --$field does not match! ";
+            $log.info(" $mycust Teams-- sipserver --$field does not match! ");        
         }
     }
         ForEach($name in $teams_sipserver2){
@@ -1485,8 +1444,8 @@ function Get-SipServerTeams{
                             -literalpath $sipserverfile2 `
                             -AllMatches;
         if(!($name  = $ca)){
-            Write-Host "`n$mycust Teams-- sipserver2 `
-                    --$field does not match! ";
+            Write-Host "`n$mycust Teams-- sipserver2 --$field does not match! ";
+            $log.info(" $mycust Teams-- sipserver2 --$field does not match! ");
         }
     }
         ForEach($name in $teams_sipserver3){
@@ -1495,8 +1454,8 @@ function Get-SipServerTeams{
                             -literalpath $sipserverfile3 `
                             -AllMatches;
         if(!($name = $cb)){
-            Write-Host "`n$mycust Teams-- sipserver3 `
-                    --$field does not match! ";
+            Write-Host "`n$mycust Teams-- sipserver3 --$field does not match! ";
+            $log.info(" $mycust Teams-- sipserver --$field does not match! ");
         }
     }
 
@@ -1504,7 +1463,7 @@ function Get-SipServerTeams{
                     -ForegroundColor Yellow;
 };
 function Get-SipProfileTeams{
-    Param( $mycust, $pltfrm )
+    Param( $mycust, $pltfrm, $log )
     $type           = "teams";
     $myDir          = Get-Location;
     if($pltfrm -like 'dops'){
@@ -1536,8 +1495,8 @@ function Get-SipProfileTeams{
                             -literalpath $sipprofile `
                             -AllMatches;
         if(!($name  = $c)){
-            Write-Host "`n$mycust Teams-- sipProfile `
-                    --$field does not match! ";
+            Write-Host "`n$mycust Teams-- sipProfile --$field does not match! ";
+            $log.info(" $mycust Teams-- sipProfile --$field does not match! ");
         }
     }
     Write-Host "`n Completed checking $mycust Teams SipProfile " `
@@ -1545,7 +1504,7 @@ function Get-SipProfileTeams{
 };
 
 function Get-ChecksForRemoval{
-    param ($msa2,$conf, $codes, $myste)
+    param ($msa2,$conf, $codes, $log, $myste)
     Clear-Host;
     [int]$pstnNum  = `
     Read-Host "`n`n`n`n`n`t`tWhat is the first SG number of the customer?";
@@ -1665,6 +1624,7 @@ function Get-ChecksForRemoval{
                             -conf $conf `
                             -sgname $sgname `
                             -myste $myste `
+                            -log  $log `
                             -pstnNum $pstnNum `
                             -teamsNum $teamsNum;
         }
@@ -1675,6 +1635,7 @@ function Remove-Customer{
            $conf, `
            $myste, `
            $sgname, `
+           $log, `
            $pstnNum, `
            $teamsNum)
 
@@ -1947,4 +1908,298 @@ function Remove-Customer{
             -ForegroundColor Red;
         };
 
+};
+
+function Get-AllCustomer{
+	param ($msa2,$conf, $log, $myste)
+    
+	$mloc   =   get-location;
+    $gwstorage = "{0}\{1}" -f $mloc,$myste;
+    if(Test-Path $gwstorage){
+        Remove-Item -Path $gwstorage -Recurse -Force;
+        }
+    Clear-Host;
+    
+	$stepoff  =   Read-Host "`t`tHow many SGs on the gateway?";
+    $log.info("`n`n****** Gathering all elements for $stepoff Customers on $myste.");
+    $cstsl = 1;
+    while($cstsl -le $stepoff){
+        $mysg   =   "sipsg/$cstsl";
+        $soUri  =   '{0}{1}' -f $mSa2,$mysg;
+        $sg     =   Invoke-WebRequest @props `
+                                 -Uri $soUri `
+                                 -Method GET;
+        $sg_xml = [xml]$sg.Content.Trim();
+        if(!($sg_xml.root.status.http_code -match '200')){
+            $retcode = $sg_xml.root.status.app_status.app_status_entry.code;
+            myFailure= $codes.$retcode;
+            Write-Host "`n`n`n`t`t$($sg_xml.root.status.http_code) - $myFailure" `
+                                                            -ForegroundColor Red;
+            return;
+        };
+    
+        $sgn = ($sg_xml.root.sipsg).Description;
+        $sgname = $sgn -replace '(.*?)_pstn','$1' `
+                        -replace '(.*?)_teams','$1';
+
+
+    
+        if($cstsl % 2 -eq 0){
+            $cstnme = "{0}\{1}_teams" -f $gwstorage,$sgname;
+        }
+        else{
+            $cstnme = "{0}\{1}_pstn" -f $gwstorage,$sgname;
+        }
+
+	    if (!(Test-Path -Path $cstnme)){
+       	        New-Item -ItemType Directory -Path $cstnme;
+       		    $oudir=$cstnme;
+            }
+        #}
+        #if (!(Test-Path -Path $cstnme)){    
+	    #    if($cstsl % 2 -eq 0){
+        #        New-Item -ItemType Directory -Path $nwdrt;
+        #        $oudir=$nwdrt;
+	    #    }      
+        #}
+        
+    ##  Only Grabbing Registratin tables from even numbered,
+    ##  Pstn Groups.	
+        if($cstsl % 2 -ne 0){
+           	$fi1    =   "sipremoteauthentry";
+    	    $fn1    =   "{0}.txt" -f $fi1;
+    	    $site1  =   "sipremoteauthtable/$cstsl/sipremoteauthentry/1";
+    	    $soUri1 =   '{0}{1}' -f $mSa2,$site1;
+    	    $mLs1   =   Invoke-WebRequest @props -Uri $soUri1 -Method GET;
+
+    	    $mLs1_xml = [xml]$mLs1.Content.Trim();
+            if(!($mLs1_xml.root.status.http_code -match 200)){
+                $retcode = $mLs1_xml.root.status.app_status.app_status_entry.code;
+                $myFailure= $codes.$retcode;
+                $log.error("$site1 not found.--$($mLs1_xml.root.status.http_code) - $myFailure");
+                Write-Host "`n`t`tProblem getting $site1";
+                Write-Host "`t`t$($mLs1_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;
+            
+            }
+            else{
+                $mLs1_xml.root.$fi1 |Out-File $oudir\$fn1;
+            	                (Get-Content $oudir\$fn1) |`
+    	                        Select-String -Pattern "rt_[a-z]" `
+		                                      -NotMatch |`
+    		                                  Out-File $oudir\$fn1;
+            }
+    
+    	    $fi2    =   "sipregistrantentry"
+    	    $fn2    =   "{0}.txt" -f $fi2;
+    	    $site2  =   "sipcontactregistrant/$cstsl/sipregistrantentry/1";
+    	    $soUri2 =   '{0}{1}' -f $mSa2,$site2; 
+    	    $mLs2   =   Invoke-WebRequest @props -Uri $soUri2 -Method GET;
+    	
+    	    $mLs2_xml = [xml]$mLs2.Content.Trim();
+                if(!($mLs2_xml.root.status.http_code -match 200)){
+                    $retcode = $mLs2_xml.root.status.app_status.app_status_entry.code;
+                    $myFailure= $codes.$retcode;
+                    $log.error("$site2 not found.--$($mLs2_xml.root.status.http_code) - $myFailure");
+                    Write-Host "`n`t`t Problem checking $site2";
+                    Write-Host "`t`t $($mLs2_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;
+                }
+                else{
+                    $mLs2_xml.root.$fi2 |Out-File $oudir\$fn2;
+        	        (Get-Content $oudir\$fN2) |`
+    	            Select-String -Pattern "rt_[a-z]" `
+		                          -NotMatch |`
+    		                      Out-File $oudir\$fn2;
+                }
+        }
+    ##  Pstn Exceptions done, moving on  ###
+
+	    $site3  =   $fI3 = "sipprofile";
+        $soUri3 =   '{0}{1}/{2}' -f $mSa2,$site3,$cstsl;
+        $fn3    =   "{0}.txt" -f $fi3;
+        $mLs3   =   Invoke-WebRequest @props -Uri $soUri3 -Method GET;
+        
+        $mLs3_xml = [xml]$mLs3.Content.Trim();
+            if(!($mLs3_xml.root.status.http_code -match 200)){
+                $retcode = $mLs3_xml.root.status.app_status.app_status_entry.code;
+                $myFailure= $codes.$retcode;
+                $log.error("$site3 not found.--$($mLs3_xml.root.status.http_code) - $myFailure");
+                Write-Host "`n`t`t Problem checking $site3";
+                Write-Host "`t`t $($mLs3_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;
+            }
+            else{    
+                $mLs3_xml.root.$fi3 |Out-File $oudir\$fn3;
+                (Get-Content $oudir\$fn3) |`
+                Select-String -Pattern "rt_[a-z]" `
+	                          -NotMatch |`
+    	                      Out-File $oudir\$fn3;
+            }
+
+        $fi4    =   "sipserver"
+        $fn4    =   "{0}.txt" -f $fi4;
+        $fn4a   =   "{0}2.txt" -f $fi4;
+        $fn4b   =   "{0}3.txt" -f $fi4;
+        $site4  =   "sipservertable/$cstsl/sipserver/1";
+        $soUri4 =   '{0}{1}' -f $mSa2,$site4;
+
+        
+        ##  Both PSTN and Teams should get a Server Table 1.
+        $mLs4       =   Invoke-WebRequest @props `
+                            -Uri $soUri4 `
+                            -Method GET;
+        $mLs4_xml   = [xml]$mLs4.Content.Trim();
+            if(!($mLs4_xml.root.status.http_code -match 200)){
+                $retcode = $mLs4_xml.root.status.app_status.app_status_entry.code;
+                $myFailure= $codes.$retcode;
+                $log.error("$site4 not found.--$($mLs4_xml.root.status.http_code) - $myFailure");
+                Write-Host "`n`t`t Problem checking $site4";
+                Write-Host "`t`t $($mLs4_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;
+            }
+            else{
+                $mLs4_xml.root.$fi4 |Out-File $oudir\$fn4;
+                (Get-Content $oudir\$fn4) |`
+                        Select-String -Pattern "rt_[a-z]" `
+	                                  -NotMatch |`
+    	                              Out-File $oudir\$fn4;
+            }
+
+    ##  Beginning additional Server ServerTables if Teams only.###
+    if($cstsl % 2 -ne 1){
+        $site4a =   "sipservertable/$cstsl/sipserver/2";
+        $soUri4a=  '{0}{1}' -f $mSa2,$site4a;
+        $site4b =   "sipservertable/$cstsl/sipserver/3";
+        $soUri4b=   '{0}{1}' -f $mSa2,$site4b;
+        ##  Second Teams Servertable
+        $mLs4a      =   Invoke-WebRequest @props `
+                                    -Uri $soUri4a `
+                                    -Method GET;
+        
+        $mLs4a_xml  =   [xml]$mLs4a.Content.Trim();
+            if(!($mLs4a_xml.root.status.http_code -match 200)){
+                $retcode = $mLs4a_xml.root.status.app_status.app_status_entry.code;
+                $myFailure= $codes.$retcode;
+                $log.error("$site4a not found.--$($mLs4a_xml.root.status.http_code) - $myFailure");
+                Write-Host "`n`t`t Problem checking $site4a";
+                Write-Host "`t`t $($mLs4a_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;
+            }
+            else{
+                $mLs4a_xml.root.$fi4 |Out-File $oudir\$fn4a;
+                (Get-Content $oudir\$fn4a) |`
+                Select-String -Pattern "rt_[a-z]" `
+	                          -NotMatch |`
+    	                      Out-File $oudir\$fn4a;
+            }
+
+        ##  Third Teams servertable
+        $mLs4b      =   Invoke-WebRequest @props `
+                                     -Uri $soUri4b `
+                                     -Method GET;
+        $mLs4b_xml  =   [xml]$mLs4b.Content.Trim();
+            if(!($mLs4b_xml.root.status.http_code -match 200)){
+                $retcode = $mLs4b_xml.root.status.app_status.app_status_entry.code;
+                $myFailure= $codes.$retcode;
+                $log.error("$site4b not found.--$($mLs4b_xml.root.status.http_code) - $myFailure");
+                Write-Host "`n`t`t Problem checking $site4b";
+                Write-Host "`t`t $($mLs4b_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;
+            }
+            else{ 
+                $mLs4b_xml.root.$fi4 |Out-File $oudir\$fn4b;
+                (Get-Content $oudir\$fn4b) |`
+                Select-String -Pattern "rt_[a-z]" `
+	                          -NotMatch |`
+    	                      Out-File $oudir\$fn4b;
+            }
+    }
+    ##  End additional Server ServerTables if Teams only.###
+    
+        $fi5    =   "transformationentry";
+        $fn5    =   "{0}.txt" -f $fi5;
+        $site5  =   "transformationtable/$cstsl/transformationentry/1";
+        $soUri5 =   '{0}{1}' -f $mSa2,$site5;
+        $mLs5   =   Invoke-WebRequest @props `
+                             -Uri $soUri5 `
+                             -Method GET;
+        $mLs5_xml = [xml]$mLs5.Content.Trim();
+            if(!($mLs5_xml.root.status.http_code -match 200)){
+                $retcode = $mLs5_xml.root.status.app_status.app_status_entry.code;
+                $myFailure= $codes.$retcode;
+                $log.error("$site5 not found.--$($mLs5_xml.root.status.http_code) - $myFailure");
+                Write-Host "`n`t`t Problem checking $site5";
+                Write-Host "`t`t $($mLs5_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;
+            }
+            else{
+                $mLs5_xml.root.$fi5 |Out-File $oudir\$fn5;
+                (Get-Content $oudir\$fn5) |`
+                Select-String -Pattern "rt_[a-z]" `
+	                          -NotMatch |`
+                              Out-File $oudir\$fn5;
+            }
+
+        $fi6    =   "routingentry"
+        $fn6    =   "{0}.txt" -f $fi6;
+        $site6  =   "routingtable/$cstsl/routingentry/1";
+        $soUri6 =   '{0}{1}' -f $mSa2,$site6;
+        $mLs6   =   Invoke-WebRequest @props `
+                             -Uri $soUri6 `
+                             -Method GET;
+        $mLs6_xml   = [xml]$mLs6.Content.Trim();
+            if(!($mLs6_xml.root.status.http_code -match 200)){
+                $retcode = $mLs6_xml.root.status.app_status.app_status_entry.code;
+                $myFailure= $codes.$retcode;
+                $log.error("$site6 not found.--$($mLs6_xml.root.status.http_code) - $myFailure");
+                Write-Host "`n`t`t Problem checking $site6";
+                Write-Host "`t`t $($mLs6_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;            
+            }
+            else{
+                $mLs6_xml.root.$fI6 |Out-File $oudir\$fn6;
+	            (Get-Content $oudir\$fn6) |`
+    	        Select-String -Pattern "rt_[a-z]" `
+		                      -NotMatch |`
+    	                      Out-File $oudir\$fn6;
+            }
+
+        $site7  =   $fI7 = "sipsg";
+        $fn7    =   "{0}.txt" -f $fi7;
+        $soUri7 =   '{0}{1}/{2}' -f $mSa2,$site7,$cstsl;
+        $mLs7   =   Invoke-WebRequest @props `
+	        			    -Uri $soUri7 `
+		    			    -Method GET;
+        $mLs7_xml   =   [xml]$mLs7.Content.Trim();
+            if(!($mLs7_xml.root.status.http_code -match 200)){
+                $retcode = $mLs7_xml.root.status.app_status.app_status_entry.code;
+                $myFailure= $codes.$retcode;
+                $log.error("$site7 not found.--$($mLs7_xml.root.status.http_code) - $myFailure");
+                Write-Host "`n`t`t Problem checking $site7";
+                Write-Host "`t`t $($mLs7_xml.root.status.http_code) - $myFailure" `
+                                                                 -ForegroundColor Red;
+            }
+            else{
+                $mLs7_xml.root.$fI7 |Out-File $oudir\$fn7;
+                (Get-Content $oudir\$fn7) |`
+                Select-String -Pattern "rt_[a-z]" `
+	                          -NotMatch |`
+    	                      Out-File $oudir\$fn7;
+            }
+        if($cstsl % 2 -ne 0){
+            if(((Get-ChildItem $nwdrp ).Length) -eq '0'){
+                Remove-Item $nwdrp -Force;
+                $log.error("Removed supurfluous directory $nwdrt.");
+            }
+        }
+        else{     
+        if(((Get-ChildItem $nwdrt ).Length) -eq '0'){
+            Remove-Item $nwdrt -Force;
+            $log.error("Removed supurfluous directory $nwdrt.");
+            }
+        }
+        $log.info("****** Completed gathering elements for Customer $cstsl.");
+        $cstsl++;
+    }
 };
