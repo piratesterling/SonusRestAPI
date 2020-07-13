@@ -1072,7 +1072,7 @@ function Get-MyAvailLic{
 };
 
 function Get-SgCounts{
-    param ($msa2,$conf, $myste)
+    param ($msa2,$conf,$log,$myste)
 
     $site1      =   $fI1 = "sipsg";
     $fileName   =   "$PSScriptRoot/sgcounts.txt"
@@ -1085,7 +1085,7 @@ function Get-SgCounts{
             Remove-Item $tmpfile;
         }            
     $mypat=[regex]'\bCha\w+'
-        
+    [int]$realNum = $counter;    
     for ($i=1; $i -le $counter; $i++){
         $soUri  =   '{0}{1}/{2}' -f $mSa2,$site1,$i;
         $mLs1   =   Invoke-WebRequest @props `
@@ -1096,9 +1096,10 @@ function Get-SgCounts{
         if(!($mLs1_xml.root.status.http_code -match 200)){
             $retcode = $mLs1_xml.root.status.app_status.app_status_entry.code;
             $myFailure= $codes.$retcode;
-            Write-Host "`n`t`tFailed to gather information for $soUri.";
-            Write-Host "`t`t$($mLs1_xml.root.status.http_code) - $myFailure" `
-                                                             -ForegroundColor Red;
+            $newcount =$realNum--;
+            $log.debug( "`n`t`tFailed to gather information for $soUri." );
+            $log.debug( "`t`t$($mLs1_xml.root.status.http_code) - $myFailure" );
+                                                                       
         }
             
 
@@ -1114,8 +1115,9 @@ function Get-SgCounts{
             | Foreach-Object {$_.Matches} `
             | ForEach-Object {$_.Groups[0].Value};
     $b =$myttls | measure -sum;
-    Write-Host "`n`n`t`t$($b.Sum) total channels on $myste" `
-                        -ForegroundColor Yellow;
+    write-host "`n`n`t`tTotal SGs is $realNum using $($b.Sum) channels on $myste" `
+    -ForegroundColor Yellow;
+    $log.info("Get-SgCount run on $myste.  SG=$realNum channels=$($b.Sum)");                       
     start-sleep -s 3;
 
 };

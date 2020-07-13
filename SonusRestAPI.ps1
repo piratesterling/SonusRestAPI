@@ -2,16 +2,17 @@
 Set-ExecutionPolicy -ExecutionPolicy Bypass;
 $log = New-Object AltiLog ;
 
-$log.file =     $conf.logging.File;
-$log.Level =    $conf.logging.Level;
-$log.Appender = $conf.logging.logOrScreen;
-
 $curDir = $PSScriptRoot;
 cd $curDir;
 $localLog = "$curDir\MyHistory.log";
 $conf = Get-Content ".\config.json" | Out-String | ConvertFrom-Json ;
 $codes = Get-Content ".\SonusFails.json" | Out-String | ConvertFrom-Json ;
 Import-Module -force "$PSScriptRoot\sonus.psm1";
+
+#$log.file =     $conf.logging.File;
+$log.file     = "$curDir\Sonusactions.log";
+$log.Level    = $conf.logging.Level;
+$log.Appender = $conf.logging.logOrScreen;
 
 [Net.ServicePointManager]::`
 SecurityProtocol = [Net.SecurityProtocolType]::`
@@ -134,7 +135,7 @@ $props.websession = $websession
 ##  for closing out the session through commands so that new login is not needed per call. 
 ##############################################################################################
 clear-host;
-$log.error("Beginning processing of request");
+$log.info("Beginning processing of request");
 $myMatrix = Read-Host "`n`n`n`t`tIs this a:`
                                 (1).Specific Query `
                                 (2).Customer Query `

@@ -31,7 +31,7 @@
     },
 "logging":
     {
-    "File"          : "c:\\Users\\struex\\Desktop\\CloudRepository\\Sonus\\sonusapi\\Sonusactions.log",
+    "File"          : "c:\\Users\\struex\\Desktop\\1-CloudRepository\\Sonus\\sonusapi\\Sonusactions.log",
     "Level"         : "4",
     "logOrScreen"   : "File"
     },
