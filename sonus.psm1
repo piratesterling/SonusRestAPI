@@ -1,3 +1,4 @@
+set-executionpolicy -ExecutionPolicy Bypass;
 ###############################################################################
 ##       Version created and tested 4/17/2020 by struex@altigen.com
 ###############################################################################
@@ -1502,7 +1503,55 @@ function Get-SipProfileTeams{
     Write-Host "`n Completed checking $mycust Teams SipProfile " `
                     -ForegroundColor Yellow;
 };
-
+function Set-Suspend{
+    param ($msa2,`
+           $conf, `
+           $myste, `
+           $sgname, `
+           $log, `
+           $pstnNum, `
+           $teamsNum)
+    [int]$pstnNum  = `
+    Read-Host "`n`n`n`n`n`t`tWhat is the first SG number of the customer?";
+    $mysg   =   "sipsg/$pstnNum";
+    $soUri  =   '{0}{1}' -f $mSa2,$mysg;
+    
+    $sg     =   Invoke-WebRequest @props `
+                         -Uri $soUri `
+                         -Method GET;
+    
+    
+    $sg_xml = [xml]$sg.Content.Trim();
+    $sgn = ($sg_xml.root.sipsg).Description;
+    $teamsNum    = $pstnNum + 1;
+    
+    $sgname_pstn = "{0}_Suspended" -f $sgn ;
+    $sg_teams = $sgn -replace '_pstn','_teams';
+    $sgname_teams = "{0}_Suspended" -f $sg_teams
+    
+	$sgp1 = @{
+		"customAdminState"          ="0"
+        "Channels"                  ="1"
+    	"Description"               =$sgname_pstn
+        }
+	$sgp2 = @{
+		"customAdminState"          ="0"
+        "Channels"                  ="1"
+    	"Description"               =$sgname_teams
+        }
+    $myUri = "{0}sipsg/" -f $mSa2;
+    $uri1 = $myUri + $pstnNum;
+    $uri2 = $myUri + $teamsNum;
+    
+    Invoke-RestMethod @props `
+                -Method 'Post' `
+				-Uri  $uri1 `
+				-Body $sgp1;
+    Invoke-RestMethod @props `
+                -Method 'Post' `
+				-Uri  $uri2 `
+				-Body $sgp2;  
+}
 function Get-ChecksForRemoval{
     param ($msa2,$conf, $codes, $log, $myste)
     Clear-Host;

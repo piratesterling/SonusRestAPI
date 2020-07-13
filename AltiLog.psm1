@@ -1,4 +1,5 @@
-﻿Enum Level {    
+﻿Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope CurrentUser;
+Enum Level {    
     fatal = 1
     error = 2
     warn  = 3

@@ -1,4 +1,5 @@
 ﻿using module ".\AltiLog.psm1";
+Set-ExecutionPolicy -ExecutionPolicy Bypass;
 $log = New-Object AltiLog ;
 
 $log.file =     $conf.logging.File;
@@ -144,7 +145,8 @@ $myMatrix = Read-Host "`n`n`n`t`tIs this a:`
                                 (7).Get system SG count `
                                 (8).Check Cust Config `
                                 (9).Remove Customer `
-                                (10).Full Gateway Query";
+                                (10).Full Gateway Query
+                                (11).Suspend Customer";
  
     if     ($myMatrix -eq '1'){
         Get-RibbonInfo  -mSa2 $mSa2 `
@@ -223,6 +225,13 @@ $myMatrix = Read-Host "`n`n`n`t`tIs this a:`
 	}
     elseif ($myMatrix -eq '10'){
         Get-AllCustomer  -mSa2 $mSa2 `
+              	         -conf $conf `
+                         -codes $codes `
+                         -log $log `
+                         -myste $myste;
+    }
+    elseif ($myMatrix -eq '11'){
+        Set-Suspend      -mSa2 $mSa2 `
               	         -conf $conf `
                          -codes $codes `
                          -log $log `
